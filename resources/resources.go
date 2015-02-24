@@ -1,0 +1,9 @@
+package resources
+
+const (
+  SERVER_ADDR_FLAG = "SERVER_ADDR"
+  SERVER_ADDR = "127.0.0.1"
+  SERVER_PORT = 9323
+  PORT_FLAG = "PORT"
+  WEB_SERVER_PORT = "8080"
+)
