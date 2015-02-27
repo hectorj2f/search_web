@@ -3,6 +3,7 @@ package main
 import (
   "fmt"
   "html/template"
+  //"io"
   "net/http"
   "os"
   "strconv"
@@ -17,6 +18,7 @@ var (
   server_addr string
   server_port int
   )
+
 
 func init(){
   server_port = resources.SERVER_PORT
@@ -52,29 +54,38 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
   result, err := networking.Query(search_query, server_addr, true, server_port)
   if err != nil {
     logger.Errorf("Error while searching users %s", err)
+    // Avoid to crash the server
     fmt.Fprintln(w, "ERROR: There has occurred an error when searching :( ")
-    return
   }
 
+  t, err := template.New("result").Parse(templResult)
+  text_to_render := arrayOfTuples(result)
+  if len(text_to_render) == 0 {
+    fmt.Sprintf("=> No results found with this criteria.")
+  }
+
+  err = t.ExecuteTemplate(w, "T", text_to_render)
+}
+
+func arrayOfTuples(result []map[string]interface{}) ([]string) {
+  list := make([]string, 0)
   for _, user := range result {
-    fmt.Fprintf(w,"ID: %d CREATED: %s USERNAME: %s ROLE: %s ORGANIZATION: %s\n",
-                 user["id"].(int64),
-                 user["created"].(string),
-                 user["username"].(string),
-                 user["role"].(string),
-                 user["organization"].(string))
+    list = append(list, fmt.Sprintf("ID: %d USERNAME: %s ROLE: %s ORGANIZATION: %s",
+                                user["id"].(int64),
+                                user["username"].(string),
+                                user["role"].(string),
+                                user["organization"].(string)))
   }
-  if len(result) == 0 {
-    fmt.Fprintln(w,"=> No results found with this criteria.")
-  }
+  return list
+
 }
 
 func main() {
   http.HandleFunc("/", searchHandler)
   http.HandleFunc("/search", listHandler)
-  http.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
-    http.ServeFile(w, r, r.URL.Path[1:])
-  })
+
+  fs := http.FileServer(http.Dir("static"))
+  http.Handle("/static/", http.StripPrefix("/static/", fs))
 
   logger.Infof("Started web server for swarm search engine at %s", resources.WEB_SERVER_PORT)
 
