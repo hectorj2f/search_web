@@ -17,6 +17,7 @@ import (
 var (
   server_addr string
   server_port int
+  web_port  int
   )
 
   const templResult = `{{define "T"}}<head>
@@ -32,7 +33,7 @@ var (
   <div id="header-container">
       <header class="wrapper">
           <nav>
-           <div class="pul"><a href="http://localhost:8080">Home</a></div>
+           <div class="pul"><a href="http://localhost:8888">Home</a></div>
           </nav>
       </header>
   </div>
@@ -60,6 +61,10 @@ func init(){
   server_addr = resources.SERVER_ADDR
   if os.Getenv(resources.SERVER_ADDR_FLAG) != "" {
     server_addr = os.Getenv(resources.SERVER_ADDR_FLAG)
+  }
+  web_port = resources.WEB_SERVER_PORT
+  if os.Getenv(resources.WEB_PORT_FLAG) != "" {
+    web_port, _ = strconv.Atoi(os.Getenv(resources.WEB_PORT_FLAG))
   }
 }
 
@@ -119,11 +124,11 @@ func main() {
   fs := http.FileServer(http.Dir("static"))
   http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-  logger.Infof("Started web server for swarm search engine at %s", resources.WEB_SERVER_PORT)
+  logger.Infof("Started web server for swarm search-engine at %d", web_port)
 
-  err := http.ListenAndServe(fmt.Sprintf(":%s",resources.WEB_SERVER_PORT), nil)
+  err := http.ListenAndServe(fmt.Sprintf(":%d", web_port), nil)
   if err != nil {
-    logger.Errorf("Error starting the web server at port %s", resources.WEB_SERVER_PORT)
+    logger.Errorf("Error starting the web server at port %d", web_port)
     panic("Tracestack: " + err.Error())
   }
 }
